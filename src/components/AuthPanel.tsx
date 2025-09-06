@@ -5,21 +5,18 @@ export default function AuthPanel() {
   const [email, setEmail] = useState('')
   const [userEmail, setUserEmail] = useState<string>('')
 
-  const signInWithEmail = async () => {
-    const { error } = await supabase.auth.signInWithOtp({ email })
-    if (error) alert(error.message)
-    else alert('Magic link sent! Check your email.')
-  }
-
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin, // ✅ ensures you return to current domain
-      },
-    })
-    if (error) alert(error.message)
-  }
+  const redirectTo =
+    window.location.hostname.includes('localhost')
+      ? window.location.origin
+      : 'https://teamform-pro.vercel.app';  // ← your stable Vercel domain
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo },    // ✅ return to the same origin
+  })
+  if (error) alert(error.message)
+}
 
   const signOut = async () => {
     await supabase.auth.signOut()

@@ -16,3 +16,11 @@ export default function App() {
     </div>
   )
 }
+import { useEffect } from 'react'
+
+useEffect(() => {
+  if (window.location.hash && window.location.hash.includes('access_token')) {
+    // Clean up old implicit flow fragments
+    window.history.replaceState({}, document.title, window.location.pathname)
+  }
+}, [])
