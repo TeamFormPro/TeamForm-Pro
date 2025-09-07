@@ -1,8 +1,10 @@
+import Dashboard from './components/Dashboard'
 export default function App() {
   return (
-    <div style={{padding:20, fontFamily:'system-ui'}}>
-      <h1>TeamForm Pro — Production Smoke Test</h1>
-      <p>If you can read this on Vercel, routing and assets are correct.</p>
+    <div className="container" style={{padding:20}}>
+      <h1>TeamForm Pro</h1>
+      <div style={{height:12}} />
+      <Dashboard />
     </div>
   )
 }
