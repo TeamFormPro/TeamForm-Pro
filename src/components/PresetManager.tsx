@@ -24,8 +24,12 @@ export default function PresetManager() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setPresets([]); return }
-      const rows = await listPresets()
-      setPresets(rows)
+      try {
+        const rows = await listPresets()
+        setPresets(rows)
+      } catch (e: any) {
+        alert(`Failed to load presets: ${e?.message || e}`)
+      }
     }
     load()
     const sub = supabase.auth.onAuthStateChange(() => load())
@@ -43,14 +47,14 @@ export default function PresetManager() {
     return next
   }
 
-    async function onSaveNew() {
+      async function onSaveNew() {
     try {
       const name = prompt('Preset name?')
       if (!name) return
-      const row = await createPreset(name, opts)
+      const row = await createPreset(name, opts)  
       const rows = await listPresets()
       setPresets(rows)
-      setSelectedId(row.id)   // highlight the newly created preset
+      setSelectedId(row.id)                      
       alert('Preset saved.')
     } catch (err: any) {
       alert(`Save failed: ${err?.message || err}`)
@@ -84,6 +88,7 @@ export default function PresetManager() {
       alert(`Delete failed: ${err?.message || err}`)
     }
   }
+
 
   function applyPreset(row: PresetRow) {
     setSelectedId(row.id)
