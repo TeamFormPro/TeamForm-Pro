@@ -17,26 +17,32 @@ export type PresetRow = {
 export async function listPresets(): Promise<PresetRow[]> {
   const { data, error } = await supabase
     .from('presets')
-    .select('*')
+    .select('id, name, options_json, created_at')
     .order('created_at', { ascending: false })
   if (error) throw error
   return data || []
 }
 
-export async function createPreset(name: string, options_json: any) {
+export async function createPreset(name: string, options_json: any): Promise<PresetRow> {
   const user_id = await requireUserId()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('presets')
     .insert({ user_id, name, options_json })
+    .select('id, name, options_json, created_at')
+    .single()
   if (error) throw error
+  return data as PresetRow
 }
 
-export async function updatePreset(id: string, name: string, options_json: any) {
-  const { error } = await supabase
+export async function updatePreset(id: string, name: string, options_json: any): Promise<PresetRow> {
+  const { data, error } = await supabase
     .from('presets')
     .update({ name, options_json })
     .eq('id', id)
+    .select('id, name, options_json, created_at')
+    .single()
   if (error) throw error
+  return data as PresetRow
 }
 
 export async function deletePreset(id: string) {

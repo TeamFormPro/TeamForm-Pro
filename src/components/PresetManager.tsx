@@ -43,32 +43,46 @@ export default function PresetManager() {
     return next
   }
 
-  async function onSaveNew() {
-    const name = prompt('Preset name?')
-    if (!name) return
-    await createPreset(name, opts)
-    const rows = await listPresets()
-    setPresets(rows)
-    alert('Preset saved.')
+    async function onSaveNew() {
+    try {
+      const name = prompt('Preset name?')
+      if (!name) return
+      const row = await createPreset(name, opts)
+      const rows = await listPresets()
+      setPresets(rows)
+      setSelectedId(row.id)   // highlight the newly created preset
+      alert('Preset saved.')
+    } catch (err: any) {
+      alert(`Save failed: ${err?.message || err}`)
+    }
   }
 
   async function onUpdateExisting() {
-    if (!selectedId) return alert('Choose a preset to update.')
-    const row = presets.find(p => p.id === selectedId)
-    if (!row) return
-    await updatePreset(row.id, row.name, opts)
-    const rows = await listPresets()
-    setPresets(rows)
-    alert('Preset updated.')
+    try {
+      if (!selectedId) return alert('Choose a preset to update.')
+      const current = presets.find(p => p.id === selectedId)
+      if (!current) return alert('Selected preset not found.')
+      await updatePreset(current.id, current.name, opts)
+      const rows = await listPresets()
+      setPresets(rows)
+      alert('Preset updated.')
+    } catch (err: any) {
+      alert(`Update failed: ${err?.message || err}`)
+    }
   }
 
   async function onDelete() {
-    if (!selectedId) return alert('Choose a preset to delete.')
-    if (!confirm('Delete this preset?')) return
-    await deletePreset(selectedId)
-    setSelectedId('')
-    const rows = await listPresets()
-    setPresets(rows)
+    try {
+      if (!selectedId) return alert('Choose a preset to delete.')
+      if (!confirm('Delete this preset?')) return
+      await deletePreset(selectedId)
+      setSelectedId('')
+      const rows = await listPresets()
+      setPresets(rows)
+      alert('Preset deleted.')
+    } catch (err: any) {
+      alert(`Delete failed: ${err?.message || err}`)
+    }
   }
 
   function applyPreset(row: PresetRow) {
