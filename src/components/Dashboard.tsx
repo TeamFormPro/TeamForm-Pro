@@ -3,6 +3,7 @@ import QuickGenerateModal from './QuickGenerateModal'
 import type { GroupOptions } from '../types'
 import TeamMaker from './TeamMaker'
 import PresetManager from './PresetManager'
+import AuthDebug from './AuthDebug'
 
 export default function Dashboard() {
   const [open, setOpen] = useState(false)
@@ -18,6 +19,10 @@ export default function Dashboard() {
       <div className="card"><PresetManager /></div>
       <div style={{height:12}} />
       <div className="card"><TeamMaker /></div>
+<div className="card">
+  <AuthDebug />
+  <PresetManager />
+</div>
 
       <QuickGenerateModal open={open} onClose={()=>setOpen(false)} onGenerate={onGenerate} />
     </div>
