@@ -19,26 +19,41 @@ export default function PresetManager() {
   const [opts, setOpts] = useState<GroupOptions>(DEFAULT_OPTIONS)
   const [presets, setPresets] = useState<PresetRow[]>([])
   const [selectedId, setSelectedId] = useState<string>('')
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState<string>('')
+
+  async function loadPresets() {
+    setLoading(true)
+    setMsg('')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setPresets([])
+        setMsg('Not signed in')
+        return
+      }
+      const rows = await listPresets()
+      setPresets(rows)
+      if (rows.length && !selectedId) setSelectedId(rows[0].id)
+      setMsg(`Loaded ${rows.length} preset(s)`)
+    } catch (e: any) {
+      console.error('loadPresets error:', e)
+      setMsg(`Load failed: ${e?.message || e}`)
+      alert(`Failed to load presets: ${e?.message || e}`)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setPresets([]); return }
-      try {
-        const rows = await listPresets()
-        setPresets(rows)
-      } catch (e: any) {
-        alert(`Failed to load presets: ${e?.message || e}`)
-      }
-    }
-    load()
-    const sub = supabase.auth.onAuthStateChange(() => load())
+    loadPresets()
+    const sub = supabase.auth.onAuthStateChange(() => loadPresets())
     return () => { sub.data.subscription.unsubscribe() }
   }, [])
 
   const kTeams = opts.mode === 'teams'
     ? Math.max(1, opts.numTeams || 1)
-    : Math.max(1, Math.ceil((opts.teamSize || 2))) // rough preview for labels/colors count
+    : Math.max(1, Math.ceil((opts.teamSize || 2)))
 
   const ensureColors = (k: number) => {
     const base = opts.customColors || []
@@ -47,16 +62,16 @@ export default function PresetManager() {
     return next
   }
 
-      async function onSaveNew() {
+  async function onSaveNew() {
     try {
       const name = prompt('Preset name?')
       if (!name) return
-      const row = await createPreset(name, opts)  
-      const rows = await listPresets()
-      setPresets(rows)
-      setSelectedId(row.id)                      
+      const row = await createPreset(name, opts)   
+      await loadPresets()                          
+      setSelectedId(row.id)                        
       alert('Preset saved.')
     } catch (err: any) {
+      console.error('onSaveNew error:', err)
       alert(`Save failed: ${err?.message || err}`)
     }
   }
@@ -67,10 +82,10 @@ export default function PresetManager() {
       const current = presets.find(p => p.id === selectedId)
       if (!current) return alert('Selected preset not found.')
       await updatePreset(current.id, current.name, opts)
-      const rows = await listPresets()
-      setPresets(rows)
+      await loadPresets()
       alert('Preset updated.')
     } catch (err: any) {
+      console.error('onUpdateExisting error:', err)
       alert(`Update failed: ${err?.message || err}`)
     }
   }
@@ -81,14 +96,13 @@ export default function PresetManager() {
       if (!confirm('Delete this preset?')) return
       await deletePreset(selectedId)
       setSelectedId('')
-      const rows = await listPresets()
-      setPresets(rows)
+      await loadPresets()
       alert('Preset deleted.')
     } catch (err: any) {
+      console.error('onDelete error:', err)
       alert(`Delete failed: ${err?.message || err}`)
     }
   }
-
 
   function applyPreset(row: PresetRow) {
     setSelectedId(row.id)
@@ -106,6 +120,27 @@ export default function PresetManager() {
     <div>
       <h2>Presets</h2>
 
+      {/* Debug / status row */}
+      <div className="row" style={{ marginBottom: 8, alignItems: 'center' }}>
+        <button onClick={loadPresets} disabled={loading}>Refresh</button>
+        <span className="muted">{loading ? 'Loading…' : msg}</span>
+        <span className="muted"> | Count: {presets.length}</span>
+      </div>
+
+      {/* Show current list visibly (debug aid) */}
+      {presets.length > 0 && (
+        <div className="card" style={{ marginBottom: 8 }}>
+          <strong>Saved Presets:</strong>
+          <ul style={{ margin: '6px 0 0 18px' }}>
+            {presets.map(p => (
+              <li key={p.id}>
+                {new Date(p.created_at).toLocaleString()} — <em>{p.name}</em>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Preset picker */}
       <div className="card" style={{ marginBottom: 10 }}>
         <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
@@ -117,7 +152,7 @@ export default function PresetManager() {
               </option>
             ))}
           </select>
-          <button onClick={async () => {
+          <button onClick={() => {
             const row = presets.find(p => p.id === selectedId)
             if (!row) return alert('Pick a preset to load.')
             applyPreset(row)
@@ -129,11 +164,11 @@ export default function PresetManager() {
           <button onClick={onDelete}>Delete Selected</button>
         </div>
         <p className="muted" style={{ marginTop: 6 }}>
-          Sign in to save/load your presets. Each teacher only sees their own.
+          Signed-in teachers see only their own presets.
         </p>
       </div>
 
-      {/* Options editor (same as before, with labels/colors) */}
+      {/* Options editor (unchanged) */}
       <div className="row">
         <label><input type="radio" checked={opts.mode === 'teams'} onChange={() => setOpts({ ...opts, mode: 'teams' })} /> By # of teams</label>
         <label><input type="radio" checked={opts.mode === 'size'} onChange={() => setOpts({ ...opts, mode: 'size' })} /> By team size</label>
