@@ -1,24 +1,36 @@
 import { useMemo } from 'react'
+import AuthPanel from './components/AuthPanel'
+import Dashboard from './components/Dashboard'
 import AuthDebug from './components/AuthDebug'
 
 export default function App() {
-  
-  const showDebug = useMemo(() => {
+    const showDebug = useMemo(() => {
     const onLocalhost = window.location.hostname === 'localhost'
     const wantsDebug = new URLSearchParams(window.location.search).get('debug') === '1'
     return onLocalhost || wantsDebug
   }, [])
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+    <div className="container" style={{ padding: '2rem' }}>
       <h1>TeamForm Pro</h1>
-      {/* … your normal UI … */}
 
+      {/* Auth controls at the top */}
+      <div style={{ height: 12 }} />
+      <AuthPanel />
+
+      {/* Main dashboard (presets, team maker, etc.) */}
+      <div style={{ height: 12 }} />
+      <Dashboard />
+
+      {/* Optional debug panel */}
       {showDebug && (
-        <div style={{ marginTop: '2rem', padding: '1rem', border: '1px solid #ccc' }}>
-          <h2>Auth Debug Panel</h2>
-          <AuthDebug />
-        </div>
+        <>
+          <div style={{ height: 20 }} />
+          <div className="card">
+            <h3>Auth Debug</h3>
+            <AuthDebug />
+          </div>
+        </>
       )}
     </div>
   )
